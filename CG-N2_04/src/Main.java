@@ -24,10 +24,9 @@ public class Main implements GLEventListener, KeyListener {
 	private static final float MAX_PAN = 500.0f;
 	private static final float MIN_PAN = -500.0f;
 	
-	private float totalPan = 0.0f;
-	private float[] axisSizes = {-400.0f, 400.0f, -400.0f, 400.0f};
-	private float[] axisMaxSizes = {-1000.0f, 1000.0f, -1000.0f, 1000.0f};
-	private float[] axisMinSizes = {-100.0f, 100.0f, -100.0f, 100.0f};
+	private float xPos = 0.0f;
+	private float radius = 100;
+	private float angle = 45;
 
 	public void init(GLAutoDrawable drawable) {
 		System.out.println(" --- init ---");
@@ -45,7 +44,7 @@ public class Main implements GLEventListener, KeyListener {
 
 		gl.glMatrixMode(GL.GL_MODELVIEW);
 		gl.glLoadIdentity();
-		glu.gluOrtho2D(axisSizes[0], axisSizes[1], axisSizes[2], axisSizes[3]);
+		glu.gluOrtho2D(-400, 400, -400, 400);
 
 		SRU();
 		 
@@ -53,11 +52,11 @@ public class Main implements GLEventListener, KeyListener {
 		 gl.glColor3f(0.0f, 0.0f, 0.0f);
 		 gl.glLineWidth(1.5f);
 		 gl.glBegin(GL.GL_LINES);
-	 		double angle = Math.toRadians(45);
-	 		double x = Math.cos(angle) * 100;
-	 		double y = Math.sin(angle) * 100;
-	 		gl.glVertex2d(x, y);
-	 		gl.glVertex2d(0, 0);
+	 		double angle = Math.toRadians(this.angle);
+	 		double x = Math.cos(angle) * radius;
+	 		double y = Math.sin(angle) * radius;
+	 		gl.glVertex2d(x + xPos, y);
+	 		gl.glVertex2d(xPos, 0);
 		 gl.glEnd();
 
 		 gl.glFlush();
@@ -65,105 +64,31 @@ public class Main implements GLEventListener, KeyListener {
 
 	public void keyPressed(KeyEvent e) {
 		switch (e.getKeyCode()) {
-		case KeyEvent.VK_I:
-			if (canModifyAxis(0, ZOOM_SENSITIVITY)
-					&& canModifyAxis(1, -ZOOM_SENSITIVITY)
-					&& canModifyAxis(2, ZOOM_SENSITIVITY)
-					&& canModifyAxis(3, -ZOOM_SENSITIVITY)) {
-				modifyAxis(0, ZOOM_SENSITIVITY);
-				modifyAxis(1, -ZOOM_SENSITIVITY);
-				modifyAxis(2, ZOOM_SENSITIVITY);
-				modifyAxis(3, -ZOOM_SENSITIVITY);
-			}
+		case KeyEvent.VK_Q:
+			xPos -= 10;
     		glDrawable.display();
 		break;
-		case KeyEvent.VK_O:
-			if (canModifyAxis(0, -ZOOM_SENSITIVITY)
-					&& canModifyAxis(1, ZOOM_SENSITIVITY)
-					&& canModifyAxis(2, -ZOOM_SENSITIVITY)
-					&& canModifyAxis(3, ZOOM_SENSITIVITY)) {
-				modifyAxis(0, -ZOOM_SENSITIVITY);
-				modifyAxis(1, ZOOM_SENSITIVITY);
-				modifyAxis(2, -ZOOM_SENSITIVITY);
-				modifyAxis(3, ZOOM_SENSITIVITY);
-			}
+		case KeyEvent.VK_W:
+			xPos += 10;
+			glDrawable.display();
+			break;
+		case KeyEvent.VK_A:
+			radius -= 10;
     		glDrawable.display();
 		break;
-		case KeyEvent.VK_E:
-			if (canPan(-ZOOM_SENSITIVITY)) {
-				modifyPan(0, -ZOOM_SENSITIVITY);
-				modifyPan(1, -ZOOM_SENSITIVITY);
-			}
+		case KeyEvent.VK_S:
+			radius += 10;
     		glDrawable.display();
 		break;
-		case KeyEvent.VK_D:
-			if (canPan(ZOOM_SENSITIVITY)) {
-				modifyPan(0, ZOOM_SENSITIVITY);
-				modifyPan(1, ZOOM_SENSITIVITY);
-			}
+		case KeyEvent.VK_Z:
+			angle -= 5;
     		glDrawable.display();
 		break;
-		case KeyEvent.VK_C:
-			if (canPan(ZOOM_SENSITIVITY)) {
-				modifyPan(2, ZOOM_SENSITIVITY);
-				modifyPan(3, ZOOM_SENSITIVITY);
-			}
-    		glDrawable.display();
-		break;
-		case KeyEvent.VK_B:
-			if (canPan(-ZOOM_SENSITIVITY)) {
-				modifyPan(2, -ZOOM_SENSITIVITY);
-				modifyPan(3, -ZOOM_SENSITIVITY);
-			}
+		case KeyEvent.VK_X:
+			angle += 5;
     		glDrawable.display();
 		break;
 		}
-	}
-
-	private boolean canPan(float zoom) {
-		if (zoom > 0) {
-			totalPan += zoom;
-			if (totalPan > MAX_PAN) {
-				totalPan = MAX_PAN;
-				return false;
-			}
-		} else {
-			totalPan += zoom;
-			if (totalPan < MIN_PAN) {
-				totalPan = MIN_PAN;
-				return false;
-			}
-		}
-		return true;
-	}
-	
-	private void modifyPan(int axis, float zoom) {
-		axisMaxSizes[axis] += zoom;
-		axisMinSizes[axis] += zoom;
-		
-		axisSizes[axis] += zoom;
-		System.out.println(String.format("Max = {%s, %s, %s, %s}", axisMaxSizes[0], axisMaxSizes[1], axisMaxSizes[2], axisMaxSizes[3]));
-		System.out.println(String.format("Min = {%s, %s, %s, %s}", axisMinSizes[0], axisMinSizes[1], axisMinSizes[2], axisMinSizes[3]));
-	}
-	
-	private void modifyAxis(int axis, float zoom) {
-		axisSizes[axis] += zoom;
-		
-		System.out.println(String.format("{%s} = {%s}", axis, axisSizes[axis]));
-	}
-	
-	private boolean canModifyAxis(int axis, float zoom) {
-		if (axisMaxSizes[axis] > 0 && axisSizes[axis] > axisMaxSizes[axis] && zoom > 0) {
-			return false;
-		} else if (axisMaxSizes[axis] < 0 && axisSizes[axis] < axisMaxSizes[axis] && zoom < 0) {
-			return false;
-		}
-		if (axisMinSizes[axis] > 0 && axisSizes[axis] < axisMinSizes[axis] && zoom < 0) {
-			return false;
-		} else if (axisMinSizes[axis] < 0 && axisSizes[axis] > axisMinSizes[axis] && zoom > 0) {
-			return false;
-		}
-		return true;
 	}
 
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height) {
