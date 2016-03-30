@@ -29,10 +29,7 @@ public class Main implements GLEventListener, KeyListener, MouseListener, MouseM
 	private GLAutoDrawable glDrawable;
 	
 	private static final float ZOOM_SENSITIVITY = 20.0f;
-	private static final float MAX_PAN = 500.0f;
-	private static final float MIN_PAN = -500.0f;
 	
-	private float totalPan = 0.0f;
 	private float[] axisSizes = {-400.0f, 400.0f, -400.0f, 400.0f};
 	private float[] axisMaxSizes = {-1000.0f, 1000.0f, -1000.0f, 1000.0f};
 	private float[] axisMinSizes = {-100.0f, 100.0f, -100.0f, 100.0f};
@@ -150,31 +147,23 @@ public class Main implements GLEventListener, KeyListener, MouseListener, MouseM
     		glDrawable.display();
 		break;
 		case KeyEvent.VK_E:
-			if (canPan(-ZOOM_SENSITIVITY)) {
-				modifyPan(0, -ZOOM_SENSITIVITY);
-				modifyPan(1, -ZOOM_SENSITIVITY);
-			}
+			modifyPan(0, -ZOOM_SENSITIVITY);
+			modifyPan(1, -ZOOM_SENSITIVITY);
     		glDrawable.display();
 		break;
 		case KeyEvent.VK_D:
-			if (canPan(ZOOM_SENSITIVITY)) {
-				modifyPan(0, ZOOM_SENSITIVITY);
-				modifyPan(1, ZOOM_SENSITIVITY);
-			}
+			modifyPan(0, ZOOM_SENSITIVITY);
+			modifyPan(1, ZOOM_SENSITIVITY);
     		glDrawable.display();
 		break;
 		case KeyEvent.VK_C:
-			if (canPan(ZOOM_SENSITIVITY)) {
-				modifyPan(2, ZOOM_SENSITIVITY);
-				modifyPan(3, ZOOM_SENSITIVITY);
-			}
+			modifyPan(2, ZOOM_SENSITIVITY);
+			modifyPan(3, ZOOM_SENSITIVITY);
     		glDrawable.display();
 		break;
 		case KeyEvent.VK_B:
-			if (canPan(-ZOOM_SENSITIVITY)) {
-				modifyPan(2, -ZOOM_SENSITIVITY);
-				modifyPan(3, -ZOOM_SENSITIVITY);
-			}
+			modifyPan(2, -ZOOM_SENSITIVITY);
+			modifyPan(3, -ZOOM_SENSITIVITY);
     		glDrawable.display();
 		break;
 		case KeyEvent.VK_1:
@@ -196,23 +185,6 @@ public class Main implements GLEventListener, KeyListener, MouseListener, MouseM
 		}
 	}
 
-	private boolean canPan(float zoom) {
-		if (zoom > 0) {
-			totalPan += zoom;
-			if (totalPan > MAX_PAN) {
-				totalPan = MAX_PAN;
-				return false;
-			}
-		} else {
-			totalPan += zoom;
-			if (totalPan < MIN_PAN) {
-				totalPan = MIN_PAN;
-				return false;
-			}
-		}
-		return true;
-	}
-	
 	private void modifyPan(int axis, float zoom) {
 		axisMaxSizes[axis] += zoom;
 		axisMinSizes[axis] += zoom;
@@ -229,15 +201,18 @@ public class Main implements GLEventListener, KeyListener, MouseListener, MouseM
 	}
 	
 	private boolean canModifyAxis(int axis, float zoom) {
-		if (axisMaxSizes[axis] > 0 && axisSizes[axis] > axisMaxSizes[axis] && zoom > 0) {
-			return false;
-		} else if (axisMaxSizes[axis] < 0 && axisSizes[axis] < axisMaxSizes[axis] && zoom < 0) {
-			return false;
-		}
-		if (axisMinSizes[axis] > 0 && axisSizes[axis] < axisMinSizes[axis] && zoom < 0) {
-			return false;
-		} else if (axisMinSizes[axis] < 0 && axisSizes[axis] > axisMinSizes[axis] && zoom > 0) {
-			return false;
+		if (axis == 0 || axis == 2) {
+			if (axisSizes[axis] < axisMaxSizes[axis] && zoom < 0) {
+				return false;
+			} else if (axisSizes[axis] > axisMinSizes[axis] && zoom > 0) {
+				return false;
+			}
+		} else if (axis == 1 || axis == 3) {
+			if (axisSizes[axis] < axisMinSizes[axis] && zoom < 0) {
+				return false;
+			} else if (axisSizes[axis] > axisMaxSizes[axis] && zoom > 0) {
+				return false;
+			}
 		}
 		return true;
 	}
