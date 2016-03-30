@@ -7,6 +7,14 @@
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.Queue;
+
+import javafx.geometry.Point2D;
 
 import javax.media.opengl.DebugGL;
 import javax.media.opengl.GL;
@@ -14,17 +22,28 @@ import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLEventListener;
 import javax.media.opengl.glu.GLU;
 
-public class Main implements GLEventListener, KeyListener {
+public class Main implements GLEventListener, KeyListener, MouseListener, MouseMotionListener {
 	
 	private GL gl;
 	private GLU glu;
 	private GLAutoDrawable glDrawable;
 	
+	private static final Point2D INITIAL_MANCHE_POS = new Point2D(200, 200);
 	private static final float ZOOM_SENSITIVITY = 20.0f;
+	private static final float[] IN_BOX_COLOR = {1.0f, 0.0f, 1.0f};
+	private static final float[] OUT_BOX_COLOR = {1.0f, 1.0f, 0.0f};
+	private static final float[] EQUAL_RADIOUS_BOX_COLOR = {0.0f, 1.0f, 1.0f};
 	
 	private float[] axisSizes = {-400.0f, 400.0f, -400.0f, 400.0f};
 	private float[] axisMaxSizes = {-1000.0f, 1000.0f, -1000.0f, 1000.0f};
 	private float[] axisMinSizes = {-100.0f, 100.0f, -100.0f, 100.0f};
+	
+	private Circle innerCircle = new Circle(INITIAL_MANCHE_POS, 50, 5, 1.0f);
+	private Circle outerCircle = new Circle(INITIAL_MANCHE_POS, 150, 5, 1.0f);
+	private Box innerBox = new Box(getBoxPoint(INITIAL_MANCHE_POS, 150, 135), getBoxPoint(INITIAL_MANCHE_POS, 150, -45), 1.0f);
+	private int oldMouseX = 0;
+	private int oldMouseY = 0;
+	private float[] currentColor = IN_BOX_COLOR;
 
 	public void init(GLAutoDrawable drawable) {
 		System.out.println(" --- init ---");
@@ -33,7 +52,7 @@ public class Main implements GLEventListener, KeyListener {
 		glu = new GLU();
 		glDrawable.setGL(new DebugGL(gl));
 		System.out.println("Espaco de desenho com tamanho: " + drawable.getWidth() + " x " + drawable.getHeight());
-		gl.glClearColor(1.0f, 1.0f, 1.0f, 1.0f);		
+		gl.glClearColor(0.7f, 0.7f, 0.7f, 1.0f);		
 	}
 	
 	//exibicaoPrincipal
@@ -46,21 +65,34 @@ public class Main implements GLEventListener, KeyListener {
 
 		SRU();
 		 
-		 // seu desenho ...
-		 gl.glColor3f(0.0f, 0.0f, 0.0f);
-		 gl.glPointSize(1.5f);
-		 gl.glBegin(GL.GL_POINTS);
-		 	for (int i = 0; i < 72; i++) {
-		 		double angle = Math.toRadians(5 * i);
-		 		double x = Math.cos(angle) * 100;
-		 		double y = Math.sin(angle) * 100;
-		 		gl.glVertex2d(x, y);
-		 	}
-		 gl.glEnd();
-
-		 gl.glFlush();
+		if (outerCircle.isOnLimit(innerCircle.getPos())) {
+			currentColor = EQUAL_RADIOUS_BOX_COLOR;
+		} else if (innerBox.contains(innerCircle.getPos())) {
+			currentColor = IN_BOX_COLOR;
+		} else {
+			currentColor = OUT_BOX_COLOR;
+		}
+		gl.glColor3f(currentColor[0], currentColor[1], currentColor[2]);
+		innerBox.draw(gl);
+		
+		gl.glColor3f(0.0f, 0.0f, 0.0f);
+		outerCircle.draw(gl);
+		innerCircle.draw(gl);
+		
+		gl.glPointSize(7.0f);
+		gl.glBegin(GL.GL_POINTS);
+			gl.glVertex2d(innerCircle.getPos().getX(), innerCircle.getPos().getY());
+		gl.glEnd();
+		gl.glFlush();
 	}	
-
+	
+	private Point2D getBoxPoint(Point2D initialPos, int radius, float angle) {
+ 		double angleRadians = Math.toRadians(angle);
+ 		double x = (Math.cos(angleRadians) * radius) + initialPos.getX();
+ 		double y = (Math.sin(angleRadians) * radius) + initialPos.getY();
+ 		return new Point2D(x, y);
+	}
+	
 	public void keyPressed(KeyEvent e) {
 		switch (e.getKeyCode()) {
 		case KeyEvent.VK_I:
@@ -118,7 +150,7 @@ public class Main implements GLEventListener, KeyListener {
 		System.out.println(String.format("Max = {%s, %s, %s, %s}", axisMaxSizes[0], axisMaxSizes[1], axisMaxSizes[2], axisMaxSizes[3]));
 		System.out.println(String.format("Min = {%s, %s, %s, %s}", axisMinSizes[0], axisMinSizes[1], axisMinSizes[2], axisMinSizes[3]));
 	}
-
+	
 	private void modifyAxis(int axis, float zoom) {
 		axisSizes[axis] += zoom;
 		
@@ -178,4 +210,45 @@ public class Main implements GLEventListener, KeyListener {
 		gl.glEnd();
 	}
 
+	@Override
+	public void mouseClicked(MouseEvent e) {}
+
+	@Override
+	public void mouseEntered(MouseEvent e) {}
+
+	@Override
+	public void mouseExited(MouseEvent e) {
+	}
+
+	@Override
+	public void mouseReleased(MouseEvent e) {
+		innerCircle.setPos(INITIAL_MANCHE_POS);
+		glDrawable.display();
+	}
+
+	@Override
+	public void mousePressed(MouseEvent e) {
+	    oldMouseX = e.getX();
+	    oldMouseY = e.getY();
+	}
+	    
+	@Override
+	public void mouseDragged(MouseEvent e) {
+	    int movtoX = e.getX() - oldMouseX;
+	    int movtoY = e.getY() - oldMouseY;
+	    Point2D newPos = new Point2D(innerCircle.getPos().getX() + movtoX, innerCircle.getPos().getY() - movtoY);
+	    
+	    if (outerCircle.contains(newPos)) {
+	    	innerCircle.setPos(newPos);
+	    }
+	    
+	    oldMouseX = e.getX();
+	    oldMouseY = e.getY();
+
+		glDrawable.display();
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent e) {}
+	
 }
